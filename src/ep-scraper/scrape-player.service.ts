@@ -16,7 +16,7 @@ export type PlayerSeasonStats = {
         assists: number;
         points: number;
         pim: number;
-        plusMinus: number;
+        plusMinus: number | null;
     };
 
     postSeason: {
@@ -37,18 +37,25 @@ export type PlayerCareerLeagueStat = {
     league: string;
     leagueStatUrl: string;
     seasons: number;
-    gamesPlayed: number;
-    goals: number;
-    assists: number;
-    points: number;
-    pim: number;
-    plusMinus: number;
-    postSeasonSeasons: number;
-    postSeasonGoals: string | null;
-    postSeasonAssists: string | null;
-    postSeasonPoints: string | null;
-    postSeasonPim: string | null;
-    postSeasonPlusMinus: string | null;
+    regularSeason: {
+        gamesPlayed: number;
+        goals: number;
+        assists: number;
+        points: number;
+        pim: number;
+        plusMinus: number | null;
+        pointsPerGame: number;
+    };
+
+    postSeason: {
+        gamesPlayed: number | null;
+        goals: number | null;
+        assists: number | null;
+        points: number | null;
+        pim: number | null;
+        plusMinus: number | null;
+        pointsPerGame: number | null;
+    };
 }
 
 export type PlayerCareerStatsResponse = {
@@ -67,13 +74,15 @@ export class EPScrapePlayerService {
         ['tp', 'points'],
         ['pim', 'pim'],
         ['pm', 'plusMinus'],
+        ['seasons', 'seasons'],
+        ['ppg', 'pointsPerGame']
     ])
 
     constructor(private http: HttpService) {}
 
     public getPlayerCareerStatsBySeason(playerPath: string): Observable<PlayerSeasonStatsResponse> {
         const seasonStats = [];
-        return this.http.get(`https://www.eliteprospects.com/player/${playerPath}`).pipe(
+        return this.http.get(`${PLAYER_BASE_URL}${playerPath}`).pipe(
             map(({ data }) => {
                 const $ = cheerio.load(data);
                 const playerTableRows = $(`table.player-stats tbody tr`);
@@ -100,56 +109,67 @@ export class EPScrapePlayerService {
                     const regularSeasonCols = $(el).children('td.regular');
                     if (regularSeasonCols.length) {
                         regularSeason = this.parseStatisticalColumns(regularSeasonCols, $);
-                        // regularSeasonCols.each((i, ele) => {
-                        //     const classMapName = $(ele).attr('class').split(' ')[1] || null;
-                        //     if (classMapName) {
-                        //         const text = $(ele).text().trim();
-                        //         regularSeason[this._columnClassMap.get(classMapName) || i] = parseInt(text);
-                        //     }
-                        // })
                     }
 
                     // Postseason stats
                     const postSeasonCols = $(el).children('td.postseason');
                     if (postSeasonCols.length) {
                         postSeason = this.parseStatisticalColumns(postSeasonCols, $);
-                        // postSeasonCols.each((i, ele) => {
-                        //     const classMapName = $(ele).attr('class').split(' ')[1] || null;
-                        //     if (classMapName) {
-                        //         const text = $(ele).text().trim();
-                        //         postSeason[this._columnClassMap.get(classMapName) ? `postSeason${this._columnClassMap.get(classMapName)[0].toUpperCase()}${this._columnClassMap.get(classMapName).substring(1)}` : i] = parseInt(text);
-                        //     }
-                                
-                        // })
                     }
 
-                    const seasonData = { season, team, teamStatUrl, leagueStatUrl, league, regularSeason, postSeason };
-                    seasonStats.push(seasonData);
+                    seasonStats.push({ season, team, teamStatUrl, leagueStatUrl, league, regularSeason, postSeason });
                 });
                 return { seasonStats };
             })
         );
     }
 
-    // public getPlayerCareerStats(playerPath: string): Observable<PlayerCareerStatsResponse> {
-    //     return this.http.get(`${PLAYER_BASE_URL}${playerPath}`).pipe(
-    //         map(({ data}) = > {
+    public getPlayerCareerStats(playerPath: string): Observable<PlayerCareerStatsResponse> {
+        return this.http.get(`${PLAYER_BASE_URL}${playerPath}`).pipe(
+            map(({ data}) => {
+                const careerStats = [];
 
-    //         })
-    //     )
-    // }
+                const $ = cheerio.load(data);
+                const playerTableRows = $(`table.total-player-stats tbody tr`);
+                playerTableRows.each((idx, el) => {
+                    let regularSeason = {};
+                    let postSeason = {};
 
-    private parseStatisticalColumns(cols, cherrioContext): any {
-        const $ = cherrioContext;
+                    // League Column
+                    const leagueCol = $(el).children('td.league')[0];
+                    const leagueColDetail = $(leagueCol).find('a')[0];
+                    const leagueStatUrl = $(leagueColDetail).attr('href');
+                    const league = $(leagueColDetail).text().trim();
+
+                    // Regular season stats
+                    const regularSeasonCols = $(el).children('td.regular');
+                    if (regularSeasonCols.length) {
+                        regularSeason = this.parseStatisticalColumns(regularSeasonCols, $);
+                    }
+
+                    // Postseason stats
+                    const postSeasonCols = $(el).children('td.postseason');
+                    if (postSeasonCols.length) {
+                        postSeason = this.parseStatisticalColumns(postSeasonCols, $);
+                    }
+
+                    careerStats.push({ leagueStatUrl, league, regularSeason, postSeason });
+                });
+                return { careerStats };
+            })
+        )
+    }
+
+    private parseStatisticalColumns(cols, cheerioContext): any {
+        const $ = cheerioContext;
         let stats = {};
         cols.each((i, ele) => {
             const classMapName = $(ele).attr('class').split(' ')[1];
             if (classMapName) {
-                const text = $(ele).text().trim();
-                stats[this._columnClassMap.get(classMapName) || `unknownCol${i}`] = parseInt(text);
+                const text: string = $(ele).text().trim();
+                stats[this._columnClassMap.get(classMapName) || `unknownCol${i}`] = text.includes('.') ? parseFloat(text) : parseInt(text);
             }
         });
-        console.log(stats)
         return stats;
     }
 

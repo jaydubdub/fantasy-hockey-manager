@@ -3,11 +3,15 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EpScraperModule } from './ep-scraper/ep-scraper.module';
+import { PlayerModule } from './player/player.module';
+import { DraftModule } from './draft/draft.module';
 
 @Module({
 	imports: [
 		HttpModule,
-		EpScraperModule
+		EpScraperModule,
+		PlayerModule,
+		DraftModule
 	],
 	controllers: [AppController],
 	providers: [AppService],
