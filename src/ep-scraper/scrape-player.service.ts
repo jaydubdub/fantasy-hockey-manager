@@ -81,6 +81,7 @@ export class EPScrapePlayerService {
     constructor(private http: HttpService) {}
 
     public getPlayerCareerStatsBySeason(playerPath: string): Observable<PlayerSeasonStatsResponse> {
+        console.log(playerPath)
         const seasonStats = [];
         return this.http.get(`${PLAYER_BASE_URL}${playerPath}`).pipe(
             map(({ data }) => {
@@ -157,6 +158,12 @@ export class EPScrapePlayerService {
                 });
                 return { careerStats };
             })
+        )
+    }
+
+    public getPlayerCareerStatsByLeague(playerPath: string, league: string): Observable<PlayerCareerLeagueStat | null> {
+        return this.getPlayerCareerStats(playerPath).pipe(
+            map(({ careerStats }) => careerStats.find(leagueStat => leagueStat.league.toLowerCase() === league.toLowerCase()) || null)
         )
     }
 
