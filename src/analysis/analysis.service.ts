@@ -33,10 +33,11 @@ export class AnalysisService {
         return forkJoin(playerCareerStatCalls).pipe(
             map((playerResponses: PlayerCareerLeagueStat[]): IPlayerGpRemaining[] => {
 
-                const playerGpList = playerResponses.map((p, i) => {
+                const playerGpList = playerResponses.map((s, i) => {
                     return {
                         name: roster[i].name,
-                        gamesRemaining: this.calcMaxGp(p, type, roster[i].position),
+                        gamesRemaining: this.calcMaxGp(s, type, roster[i].position),
+                        gamesPlayed: s?.regularSeason?.gamesPlayed || 0,
                         playerUrl: roster[i].url,
                         draftYear: roster[i].year
                     }
@@ -48,17 +49,17 @@ export class AnalysisService {
     }
 
     private calcMaxGp(season: PlayerCareerLeagueStat, type: 'prospect' | 'farm', position): number {
-        if (!season || !season.regularSeason) {
+        if (!season) {
             return type === 'prospect' ? 
                 PROSPECT_MAX_GP : 
                 position === 'G' ? FARM_GOALIE_MAX_GP : FARM_MAX_GP
         }
 
         if (type === 'prospect') {
-            const remaining = PROSPECT_MAX_GP - season.regularSeason.gamesPlayed;
+            const remaining = PROSPECT_MAX_GP - season?.regularSeason?.gamesPlayed || PROSPECT_MAX_GP;
             return remaining > 0 ? remaining : 0;
         } else {
-            const remaining = (position === 'G' ? FARM_GOALIE_MAX_GP : FARM_MAX_GP) - season.regularSeason.gamesPlayed;
+            const remaining = (position === 'G' ? FARM_GOALIE_MAX_GP : FARM_MAX_GP) - season?.regularSeason?.gamesPlayed || position === 'G' ? FARM_GOALIE_MAX_GP : FARM_MAX_GP;
             return remaining > 0 ? remaining : 0;
         }
     }
