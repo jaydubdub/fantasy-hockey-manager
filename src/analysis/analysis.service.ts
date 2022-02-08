@@ -59,8 +59,16 @@ export class AnalysisService {
             const remaining = PROSPECT_MAX_GP - season?.regularSeason?.gamesPlayed || PROSPECT_MAX_GP;
             return remaining > 0 ? remaining : 0;
         } else {
-            const remaining = (position === 'G' ? FARM_GOALIE_MAX_GP : FARM_MAX_GP) - season?.regularSeason?.gamesPlayed || position === 'G' ? FARM_GOALIE_MAX_GP : FARM_MAX_GP;
+            const remaining = this.calcFarmGp(position, season);
             return remaining > 0 ? remaining : 0;
+        }
+    }
+
+    private calcFarmGp(position, season): number {
+        if (position === 'G') {
+            return season?.regularSeason?.gamesPlayed ? FARM_GOALIE_MAX_GP - season?.regularSeason?.gamesPlayed : FARM_GOALIE_MAX_GP;
+        } else {
+            return season?.regularSeason?.gamesPlayed ? FARM_MAX_GP - season?.regularSeason?.gamesPlayed : FARM_MAX_GP;
         }
     }
 }

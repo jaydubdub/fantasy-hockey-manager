@@ -6,6 +6,7 @@ import { EpScraperModule } from './ep-scraper/ep-scraper.module';
 import { PlayerModule } from './player/player.module';
 import { DraftModule } from './draft/draft.module';
 import { AnalysisModule } from './analysis/analysis.module';
+import { RosterModule } from './roster/roster.module';
 
 @Module({
 	imports: [
@@ -13,7 +14,8 @@ import { AnalysisModule } from './analysis/analysis.module';
 		EpScraperModule,
 		PlayerModule,
 		DraftModule,
-		AnalysisModule
+		AnalysisModule,
+		RosterModule
 	],
 	controllers: [AppController],
 	providers: [AppService],
