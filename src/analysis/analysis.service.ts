@@ -38,8 +38,9 @@ export class AnalysisService {
                         name: roster[i].name,
                         gamesRemaining: this.calcMaxGp(s, type, roster[i].position),
                         gamesPlayed: s?.regularSeason?.gamesPlayed || 0,
-                        playerUrl: roster[i].url,
-                        draftYear: roster[i].year
+                        playerUrl: roster[i].url || null,
+                        draftYear: roster[i].year || null,
+                        position: roster[i].position || null
                     }
                 });
 

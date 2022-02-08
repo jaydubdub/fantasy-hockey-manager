@@ -1,5 +1,5 @@
 import { Controller, Get, HttpException, HttpStatus, Param, Query } from '@nestjs/common';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { PROSPECT_MAX_GP } from 'src/config/league.config';
 import { AnalysisService } from './analysis.service';
 
@@ -24,6 +24,16 @@ export class AnalysisController {
                 }
 
                 return [];
+            }),
+            catchError(err => {
+                console.log(err);
+                switch(err.response.status) {
+                    case 403:
+                        throw new HttpException(`Request limit exceeded.  Oopsie.`,  HttpStatus.FORBIDDEN);
+                    default:
+                        throw new HttpException(`Unhandled exception has occured`,  HttpStatus.SERVICE_UNAVAILABLE);
+                }
+                
             })
         );
     }
